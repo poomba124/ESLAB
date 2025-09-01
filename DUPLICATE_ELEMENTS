@@ -1,0 +1,66 @@
+		AREA RESET, DATA, READONLY
+        EXPORT __Vectors
+
+__Vectors
+        DCD     0x10001000         
+        DCD     Reset_Handler      
+        ALIGN
+
+        AREA mycode, CODE, READONLY
+        ENTRY
+        EXPORT Reset_Handler
+
+Reset_Handler
+        LDR R0,=NUM        ; R0 -> start of array
+        MOV R1,#N          ; R1 = array length
+
+OUTER
+        CMP R1,#0
+        BEQ DONE           ; If array empty, stop
+
+        LDR R2,[R0]        ; R2 = current element
+        ADD R3,R0,#4       ; R3 -> next element
+        MOV R4,R1
+        SUB R4,R4,#1       ; R4 = remaining count for INNER
+
+INNER
+        CMP R4,#0
+        BEQ NEXT_I         ; no more elements to compare
+
+        LDR R5,[R3]        ; R5 = element at R3
+        CMP R2,R5          ; compare with current element
+        BEQ DELETE_DUP     ; if equal -> delete duplicate
+
+        ; Only if NOT equal:
+        ADD R3,R3,#4       ; move to next element
+        SUB R4,R4,#1       ; decrement counter
+        B INNER
+
+DELETE_DUP
+        MOV R6,R3          ; R6 = duplicate position
+
+SHIFT_LOOP
+        ADD R7,R6,#4
+        LDR R8,[R7]        ; load next element
+        STR R8,[R6]        ; shift left
+        ADD R6,R6,#4
+        SUB R4,R4,#1
+        CMP R4,#0
+        BNE SHIFT_LOOP
+
+        SUB R1,R1,#1       ; array size reduced
+        B INNER            ; recheck at this position
+
+NEXT_I
+        ADD R0,R0,#4       ; move to next base element
+        SUB R1,R1,#1
+        B OUTER
+
+DONE
+STOP    B STOP
+
+N       EQU 8
+        AREA data, DATA, READWRITE
+NUM     DCD 5,6,3,5,6,7,2,8    
+
+        END
